@@ -371,6 +371,7 @@ Being explicit about these rather than letting you find them at 2am:
 | `npm run questions:load -- --file data/questions.json --replace` | bulk-load questions; validates every answer key first |
 | `node scripts/set-title.mjs "New Title"` | change the quiz title. Lives on the session row, so **no redeploy needed** |
 | `node loadtest/run.mjs --n 220 --drive` | the load test |
+| `node loadtest/flow-test.mjs --host-password <pw>` | 26 end-to-end assertions: auto-leaderboard cadence, void/un-void, skip, CSV export, host auth boundary, and that the answer key never leaks before REVEALED |
 | `node loadtest/run.mjs --cleanup` | delete the fake load-test participants |
 | `node scripts/fix-encoding.mjs <files>` | repair CP1252-mangled UTF-8 (see Windows notes) |
 
