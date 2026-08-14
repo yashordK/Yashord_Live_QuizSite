@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+html {
+  /* The gradient wash lives on <html> as well as <body>: when a page's
+     content is shorter than the viewport, the body box stops early and
+     the un-painted remainder shows as a flat black band below the fold. */
+  background-color: theme("colors.ink");
+}
+
+body {
+  @apply bg-ink text-slate-100 antialiased;
+  min-height: 100dvh;
+
+  /* Techy depth without costing legibility: two very low-opacity colour
+     washes (purple from the top, pink from the bottom-right) over a
+     near-black base, plus a faint grid. All of it sits far enough back
+     that white text keeps its contrast on a dim projector. */
+  background-color: theme("colors.ink");
+  background-image:
+    linear-gradient(rgba(168, 85, 247, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(168, 85, 247, 0.045) 1px, transparent 1px),
+    radial-gradient(
+      1200px 620px at 50% -12%,
+      rgba(168, 85, 247, 0.2),
+      transparent 62%
+    ),
+    radial-gradient(
+      900px 520px at 105% 105%,
+      rgba(236, 72, 153, 0.13),
+      transparent 60%
+    );
+  background-size:
+    44px 44px,
+    44px 44px,
+    100% 100%,
+    100% 100%;
+  background-attachment: fixed;
+
+  /* Stops iOS Safari bouncing the whole page when a student taps an
+     option near the edge of the screen. */
+  overscroll-behavior-y: none;
+}
+
+/* Phone-first tap targets. Students are reading these at arm's length in
+   a lecture hall, often standing, sometimes on a cracked screen. */
+@layer components {
+  .option-btn {
+    @apply w-full flex items-center gap-4 rounded-2xl border-2 border-edge
+           bg-panel/85 px-5 py-5 text-left text-xl font-medium
+           backdrop-blur-sm transition-all duration-100
+           active:scale-[0.99] disabled:opacity-60;
+    min-height: 4.5rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .option-btn:not(:disabled):hover {
+    @apply border-edgeHi bg-panelHi;
+  }
+
+  .option-key {
+    @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-xl
+           bg-edge font-mono text-lg font-bold text-slate-200;
+  }
+
+  .btn {
+    @apply rounded-xl border border-edge bg-panel/80 px-4 py-2.5 text-sm
+           font-semibold transition-colors hover:border-edgeHi hover:bg-panelHi
+           disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+  .btn-primary {
+    @apply border-transparent text-white;
+    background-image: linear-gradient(
+      135deg,
+      theme("colors.accent") 0%,
+      theme("colors.accent2") 100%
+    );
+  }
+
+  .btn-primary:not(:disabled):hover {
+    @apply border-transparent;
+    filter: brightness(1.12);
+  }
+
+  .field {
+    @apply w-full rounded-xl border-2 border-edge bg-panel/80 px-4 py-4
+           text-lg outline-none transition-colors placeholder:text-slate-500
+           focus:border-accent;
+  }
+
+  .field:focus {
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.22);
+  }
+
+  .card {
+    @apply rounded-2xl border border-edge bg-panel/75 p-4 backdrop-blur-sm;
+  }
+
+  /* Gradient wordmark, used for the app title only. */
+  .brand {
+    background-image: linear-gradient(
+      100deg,
+      #d8b4fe 0%,
+      theme("colors.accent") 45%,
+      theme("colors.accent2") 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Code inside a question. Roughly a quarter of this quiz is "what does
+     this print", so snippets get a real monospace block rather than being
+     mashed into the prose. */
+  .code-block {
+    @apply my-3 overflow-x-auto rounded-xl border border-edge bg-black/45
+           px-4 py-3 font-mono leading-relaxed text-violet-100;
+    white-space: pre;
+    tab-size: 4;
+  }
+}
+
+/* Keep the projector view from ever showing a scrollbar mid-question. */
+.present-root {
+  height: 100dvh;
+  overflow: hidden;
+}

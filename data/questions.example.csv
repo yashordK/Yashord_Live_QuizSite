@@ -1,0 +1,6 @@
+order_index,question_text,option_a,option_b,option_c,option_d,correct_option,solution_text,reading_time_sec,answer_time_sec,points
+1,Which data structure gives O(1) average-case lookup by key?,Linked list,Hash table,Binary search tree,Array,B,"A hash table computes the bucket directly from the key, so an average lookup is constant time. A balanced BST is O(log n).",5,20,100
+2,What is the time complexity of binary search on a sorted array of n elements?,O(1),O(log n),O(n),O(n log n),B,Each comparison halves the remaining search space.,5,20,100
+3,"In SQL, which clause filters rows AFTER aggregation?",WHERE,GROUP BY,HAVING,ORDER BY,C,"WHERE filters rows before grouping; HAVING filters the grouped result, so it can reference aggregates.",5,20,100
+4,"Which HTTP status means ""understood, but refused""?",401 Unauthorized,403 Forbidden,404 Not Found,500 Server Error,B,401 means you have not authenticated. 403 means the server knows who you are and still says no.,5,20,100
+5,Which is NOT a Coffman condition for deadlock?,Mutual exclusion,Hold and wait,Preemption,Circular wait,C,"The conditions are mutual exclusion, hold and wait, NO preemption, and circular wait.",5,25,100
