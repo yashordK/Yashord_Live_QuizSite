@@ -15,7 +15,7 @@ import type {
   QuestionRow,
   StatePayload,
   PublicQuestion,
-  LeaderboardEntry,
+  LeaderboardResponse,
   ScoreRow,
 } from "./types";
 
@@ -174,6 +174,7 @@ export async function buildStatePayload(
       roll_prefixes: Array.isArray(session.roll_prefixes)
         ? session.roll_prefixes
         : [],
+      leaderboard_top: session.leaderboard_top ?? 10,
     },
     question,
     question_number: raw.question_number,
@@ -274,11 +275,7 @@ export async function getScoreRows(sessionId: string): Promise<ScoreRow[]> {
   return (data ?? []) as ScoreRow[];
 }
 
-export interface LeaderboardResult {
-  entries: LeaderboardEntry[];
-  total_participants: number;
-  me: { rank: number; total_score: number } | null;
-}
+export type LeaderboardResult = LeaderboardResponse;
 
 /**
  * Leaderboard is PULL, not push — fetched when the phase becomes
@@ -303,15 +300,15 @@ export async function getLeaderboard(
 
   if (error) throw error;
 
-  const result = data as {
-    entries: LeaderboardEntry[];
-    total_participants: number;
-    me: { rank: number; total_score: number } | null;
-  };
+  const result = data as LeaderboardResponse;
 
   return {
     entries: result?.entries ?? [],
     total_participants: result?.total_participants ?? 0,
+    // Surfaced so the host knows before the projector does when the
+    // qualifying cut lands in the middle of a tie.
+    cutoff_tied: result?.cutoff_tied ?? false,
+    cutoff_score: result?.cutoff_score ?? null,
     me: result?.me ?? null,
   };
 }

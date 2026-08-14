@@ -28,6 +28,7 @@ interface Dashboard {
     join_cap: number;
     status: string;
     roll_prefixes: string[];
+    leaderboard_top: number;
   };
   counters: { joined: number; online: number; answered: number; flagged: number };
   distribution: Record<string, number>;
@@ -403,6 +404,22 @@ export default function HostControlPage() {
                   }
                 />
 
+                <NumberSetting
+                  label="Leaderboard places (qualifying cut)"
+                  hint="How many places show on the projector and on students' phones. Top N proceed to the next game."
+                  value={dash.settings.leaderboard_top ?? 10}
+                  min={1}
+                  max={200}
+                  onSave={(n) =>
+                    post(
+                      "/api/host/settings",
+                      { leaderboard_top: n },
+                      `Leaderboard now shows the top ${n}.`
+                    )
+                  }
+                  busy={busy}
+                />
+
                 <PrefixEditor
                   value={dash.settings.roll_prefixes ?? []}
                   onSave={(list) =>
@@ -646,6 +663,64 @@ function TimerInput({
  * It is never a gate — the join screen always keeps a fallback link for
  * anyone whose prefix isn't listed.
  */
+/** A single integer session setting with an explicit Save. */
+function NumberSetting({
+  label,
+  hint,
+  value,
+  min,
+  max,
+  onSave,
+  busy,
+}: {
+  label: string;
+  hint: string;
+  value: number;
+  min: number;
+  max: number;
+  onSave: (n: number) => void;
+  busy: boolean;
+}) {
+  const [draft, setDraft] = useState(String(value));
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (!dirty) setDraft(String(value));
+  }, [value, dirty]);
+
+  const parsed = Math.max(min, Math.min(max, Math.round(Number(draft) || 0)));
+
+  return (
+    <div className="border-t border-edge pt-3">
+      <label className="block text-sm font-semibold">{label}</label>
+      <p className="mb-2 text-xs text-slate-500">{hint}</p>
+      <div className="flex gap-2">
+        <input
+          type="number"
+          min={min}
+          max={max}
+          className="w-24 rounded-lg border border-edge bg-ink px-3 py-2 text-center font-mono text-sm"
+          value={draft}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            setDirty(true);
+          }}
+        />
+        <button
+          className="btn"
+          disabled={busy || !dirty}
+          onClick={() => {
+            onSave(parsed);
+            setDirty(false);
+          }}
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function PrefixEditor({
   value,
   onSave,

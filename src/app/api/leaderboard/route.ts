@@ -13,14 +13,18 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(req: Request) {
   try {
-    const url = new URL(req.url);
-    const limit = Math.min(
-      100,
-      Math.max(1, Number(url.searchParams.get("limit") ?? 10) || 10)
-    );
-
     const session = await getSession();
     const participantId = await getParticipantId();
+
+    // Default to the session's configured cut (24 for this event) so the
+    // number of places shown is controlled in one place and can be
+    // changed live, rather than being hard-coded into three callers.
+    const url = new URL(req.url);
+    const requested = url.searchParams.get("limit");
+    const limit = Math.min(
+      200,
+      Math.max(1, Number(requested ?? session.leaderboard_top) || 10)
+    );
 
     const result = await getLeaderboard(session.id, { limit, participantId });
 

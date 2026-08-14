@@ -31,6 +31,8 @@ export interface SessionRow {
   auto_advance: boolean;
   leaderboard_interval: number;
   leaderboard_shown_after: number;
+  /** Places shown on the leaderboard; the qualifying cut for this event. */
+  leaderboard_top: number;
   /** Optional prefixes offered on the join screen. Empty = free text. */
   roll_prefixes: string[];
   state_version: number;
@@ -120,6 +122,15 @@ export interface PublicQuestion {
   voided: boolean;
 }
 
+export interface LeaderboardResponse {
+  entries: LeaderboardEntry[];
+  total_participants: number;
+  /** The cut splits a tie — #N and #N+1 have the same score. */
+  cutoff_tied: boolean;
+  cutoff_score: number | null;
+  me: { rank: number; total_score: number } | null;
+}
+
 export interface LeaderboardEntry {
   rank: number;
   name: string;
@@ -144,6 +155,8 @@ export interface StatePayload {
     joined_count: number;
     /** Offered on the join screen; never used to reject a roll. */
     roll_prefixes: string[];
+    /** Places the leaderboard shows = the qualifying cut. */
+    leaderboard_top: number;
   };
   question: PublicQuestion | null;
   question_number: number | null;

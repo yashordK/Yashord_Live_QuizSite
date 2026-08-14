@@ -96,7 +96,7 @@ export default function PlayPage() {
 
     (async () => {
       try {
-        const res = await fetch("/api/leaderboard?limit=10", {
+        const res = await fetch("/api/leaderboard", {
           credentials: "same-origin",
           cache: "no-store",
         });

@@ -38,7 +38,7 @@ export default function PresentPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/leaderboard?limit=10", { cache: "no-store" });
+        const res = await fetch("/api/leaderboard", { cache: "no-store" });
         if (!res.ok) return;
         const b = await res.json();
         if (!cancelled) setBoard(b.entries);
@@ -257,11 +257,65 @@ export default function PresentPage() {
         )}
 
         {phase === "LEADERBOARD" && (
-          <div className="mx-auto w-full max-w-5xl">
-            <h1 className="mb-8 text-center text-present font-bold">
+          <div className="mx-auto flex h-full w-full max-w-[92vw] flex-col">
+            <h1
+              className="mb-[2vh] shrink-0 text-center font-bold"
+              style={{ fontSize: "clamp(1.5rem, min(3.4vw, 5.4vh), 4rem)" }}
+            >
               {state.session.status === "ended" ? "Final Scores" : "Leaderboard"}
+              <span
+                className="ml-4 font-normal text-slate-500"
+                style={{ fontSize: "0.45em" }}
+              >
+                top {state.session.leaderboard_top} qualify
+              </span>
             </h1>
-            <Leaderboard entries={board} large />
+
+            {/*
+              24 names will not fit in one column on a projector. Split
+              into two balanced columns so the type stays large enough to
+              read from the back row — the whole point of this screen.
+            */}
+            <div
+              className={`grid min-h-0 flex-1 content-start gap-x-[3vw] gap-y-[0.8vh] ${
+                board.length > 12 ? "grid-cols-2" : "grid-cols-1"
+              }`}
+            >
+              {board.map((e) => {
+                const mine = false;
+                return (
+                  <div
+                    key={e.roll_number}
+                    className="flex min-w-0 items-center gap-[1.2vw] rounded-lg border border-edge bg-panel px-[1.2vw] py-[0.7vh]"
+                  >
+                    <span
+                      className="w-[2.6em] shrink-0 text-center font-mono font-bold tabular-nums text-slate-400"
+                      style={{ fontSize: "clamp(0.9rem, min(1.4vw, 2.4vh), 2rem)" }}
+                    >
+                      {e.rank}
+                    </span>
+                    <span
+                      className="min-w-0 flex-1 truncate font-semibold"
+                      style={{ fontSize: "clamp(0.95rem, min(1.5vw, 2.6vh), 2.1rem)" }}
+                    >
+                      {e.name}
+                    </span>
+                    <span
+                      className="shrink-0 truncate font-mono text-slate-500"
+                      style={{ fontSize: "clamp(0.75rem, min(1.1vw, 1.9vh), 1.4rem)" }}
+                    >
+                      {e.roll_number}
+                    </span>
+                    <span
+                      className="shrink-0 text-right font-mono font-bold tabular-nums text-accent"
+                      style={{ fontSize: "clamp(0.95rem, min(1.5vw, 2.6vh), 2.1rem)" }}
+                    >
+                      {e.total_score}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </main>

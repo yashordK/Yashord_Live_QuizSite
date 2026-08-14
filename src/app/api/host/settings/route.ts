@@ -34,6 +34,12 @@ export async function POST(req: Request) {
     if (typeof body.join_cap === "number") {
       patch.join_cap = Math.max(1, Math.min(1000, Math.round(body.join_cap)));
     }
+    if (typeof body.leaderboard_top === "number") {
+      patch.leaderboard_top = Math.max(
+        1,
+        Math.min(200, Math.round(body.leaderboard_top))
+      );
+    }
     if (Array.isArray(body.roll_prefixes)) {
       // Normalized the same way roll numbers are, so a prefix typed as
       // "22cs" or "22-CS" ends up matching what students' rolls
