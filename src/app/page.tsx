@@ -1,7 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { normalizeRoll } from "@/lib/roll";
+
+/**
+ * Pad width for the on-screen preview only. The SERVER is authoritative
+ * (it uses ROLL_PAD_LENGTH); this exists purely so a student can see the
+ * canonical form before committing, which is what stops "I typed it
+ * differently last time" from ever becoming a lost score.
+ */
+const PREVIEW_PAD = Number(process.env.NEXT_PUBLIC_ROLL_PAD_LENGTH ?? 3) || 3;
 
 /** Stable per-device id, used only to flag (never block) duplicate logins. */
 function getDeviceToken(): string {
@@ -31,6 +40,15 @@ export default function JoinPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [blocked, setBlocked] = useState<Blocked>(null);
+
+  // Show the canonical form as they type. Display-only — the server
+  // normalizes again and its result is what's stored.
+  const canonicalPreview = useMemo(() => {
+    const c = normalizeRoll(roll, PREVIEW_PAD);
+    // Don't show it until it looks like a real roll, otherwise it flickers
+    // nonsense at them after the first keystroke.
+    return c.length >= 3 && /\d/.test(c) && /^[A-Z0-9]+$/.test(c) ? c : "";
+  }, [roll]);
 
   // Remember what they typed so a refresh mid-lecture isn't a retype.
   useEffect(() => {
@@ -159,9 +177,19 @@ export default function JoinPage() {
             maxLength={25}
             required
           />
-          <p className="mt-2 text-xs text-slate-500">
-            Spaces, dashes and capitals don&apos;t matter.
-          </p>
+          {canonicalPreview ? (
+            <p className="mt-2 text-xs text-slate-400">
+              You&apos;ll join as{" "}
+              <span className="font-mono font-bold text-accent">
+                {canonicalPreview}
+              </span>
+              {" "}— use this same roll if you get disconnected.
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-slate-500">
+              Spaces, dashes and capitals don&apos;t matter.
+            </p>
+          )}
         </div>
 
         <div>
