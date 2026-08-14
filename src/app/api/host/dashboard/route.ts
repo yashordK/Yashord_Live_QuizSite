@@ -6,6 +6,7 @@ import {
   getSession,
   getQuestions,
   getAnswerDistribution,
+  getLeaderboard,
   NotFoundError,
 } from "@/lib/session";
 
@@ -58,6 +59,13 @@ export async function GET() {
       .eq("session_id", session.id)
       .gte("last_seen_at", cutoff);
 
+    // Whether the qualifying cut lands in the middle of a tie. Surfaced
+    // here so you find out on your own screen rather than discovering it
+    // on the projector in front of the room.
+    const board = await getLeaderboard(session.id, {
+      limit: session.leaderboard_top,
+    });
+
     const { count: flaggedCount } = await db()
       .from("participants")
       .select("id", { count: "exact", head: true })
@@ -84,6 +92,12 @@ export async function GET() {
           flagged: flaggedCount ?? 0,
         },
         distribution,
+        cutoff: {
+          top: session.leaderboard_top,
+          tied: board.cutoff_tied,
+          score: board.cutoff_score,
+          total: board.total_participants,
+        },
         questions: questions.map((q) => ({
           id: q.id,
           order_index: q.order_index,

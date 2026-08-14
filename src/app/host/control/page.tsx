@@ -32,6 +32,7 @@ interface Dashboard {
   };
   counters: { joined: number; online: number; answered: number; flagged: number };
   distribution: Record<string, number>;
+  cutoff: { top: number; tied: boolean; score: number | null; total: number };
   questions: DashboardQuestion[];
 }
 
@@ -179,6 +180,17 @@ export default function HostControlPage() {
         remaining={remaining}
         status={dash.settings.status}
       />
+
+      {/* The qualifying cut splits a tie — decide deliberately before
+          this reaches the projector. */}
+      {dash.cutoff?.tied && (
+        <div className="border-b border-warn/40 bg-warn/10 px-3 py-2.5 text-sm text-warn sm:px-6">
+          <b>Qualifying cut splits a tie.</b> Places {dash.cutoff.top} and{" "}
+          {dash.cutoff.top + 1} are both on {dash.cutoff.score} points, so the
+          last slot is being decided alphabetically. Raise the cut, or announce
+          a tiebreak, before you show the final leaderboard.
+        </div>
+      )}
 
       {banner && (
         <div
