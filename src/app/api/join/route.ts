@@ -54,9 +54,16 @@ export async function POST(req: Request) {
       );
     }
 
-    const { name: rawName, roll: rawRoll, code: rawCode, device_token } = body as {
+    const {
+      name: rawName,
+      roll: rawRoll,
+      roll_prefix: rawPrefix,
+      code: rawCode,
+      device_token,
+    } = body as {
       name?: unknown;
       roll?: unknown;
+      roll_prefix?: unknown;
       code?: unknown;
       device_token?: unknown;
     };
@@ -83,7 +90,17 @@ export async function POST(req: Request) {
       );
     }
 
-    const rollResult = normalizeAndValidateRoll(rawRoll);
+    // When the join screen offered a prefix picker, the client sends the
+    // chosen prefix and the digits separately. We simply concatenate and
+    // then run the SAME normalization as free text — the composed value
+    // is treated as raw input, never as a pre-canonicalised roll. That's
+    // what keeps both entry paths resolving to one participant row.
+    const composedRoll =
+      typeof rawPrefix === "string" && rawPrefix.trim() !== ""
+        ? `${rawPrefix}${typeof rawRoll === "string" ? rawRoll : ""}`
+        : rawRoll;
+
+    const rollResult = normalizeAndValidateRoll(composedRoll);
     if (!rollResult.ok) {
       return NextResponse.json(
         { error: rollResult.message, field: "roll" },
@@ -126,7 +143,8 @@ export async function POST(req: Request) {
     const { data, error } = await db().rpc("join_participant", {
       p_session_id: session.id,
       p_roll: rollResult.canonical,
-      p_raw_roll: typeof rawRoll === "string" ? rawRoll.slice(0, 100) : null,
+      p_raw_roll:
+        typeof composedRoll === "string" ? composedRoll.slice(0, 100) : null,
       p_name: nameResult.name,
       p_device_token: deviceToken,
     });

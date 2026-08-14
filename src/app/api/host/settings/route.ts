@@ -34,6 +34,16 @@ export async function POST(req: Request) {
     if (typeof body.join_cap === "number") {
       patch.join_cap = Math.max(1, Math.min(1000, Math.round(body.join_cap)));
     }
+    if (Array.isArray(body.roll_prefixes)) {
+      // Normalized the same way roll numbers are, so a prefix typed as
+      // "22cs" or "22-CS" ends up matching what students' rolls
+      // canonicalise to. Capped at 6 so the join screen stays tappable.
+      patch.roll_prefixes = body.roll_prefixes
+        .filter((p): p is string => typeof p === "string")
+        .map((p) => p.trim().toUpperCase().replace(/[^A-Z0-9]/g, ""))
+        .filter((p) => p.length > 0 && p.length <= 12)
+        .slice(0, 6);
+    }
 
     if (Object.keys(patch).length === 0) {
       return NextResponse.json({ error: "Nothing to update." }, { status: 400 });

@@ -1,0 +1,436 @@
+<title>The Yashord Quiz — Run of Show</title>
+<style>
+  /* ------------------------------------------------------------------
+     Deliberately single-theme: this is read on a phone in a darkened
+     lecture hall while the projector is lit, and it mirrors the app's
+     own identity. Every colour is painted explicitly so the page holds
+     on either host ground rather than borrowing it.
+     ------------------------------------------------------------------ */
+  :root {
+    --ink:        #07050c;
+    --panel:      #120e1d;
+    --panel-hi:   #181227;
+    --edge:       #2c2145;
+    --edge-hi:    #3d2e60;
+
+    --purple:     #a855f7;
+    --pink:       #ec4899;
+
+    --good:       #22c55e;
+    --warn:       #fbbf24;
+    --bad:        #fb3b6c;
+
+    /* Neutrals carry a violet bias so they read as chosen, not inherited. */
+    --text:       #e8e4f0;
+    --text-dim:   #a79ec2;
+    --text-faint: #6f6690;
+
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+    --step: clamp(1.6rem, 1.2rem + 1.4vw, 2.4rem);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ink);
+    background-image:
+      radial-gradient(900px 480px at 50% -12%, rgba(168,85,247,.18), transparent 62%),
+      radial-gradient(700px 420px at 105% 104%, rgba(236,72,153,.11), transparent 60%);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 2.5rem 1.15rem 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2.75rem;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: .7rem;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--purple);
+    margin: 0 0 .5rem;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 1.4rem + 3vw, 3rem);
+    line-height: 1.05;
+    letter-spacing: -.025em;
+    font-weight: 800;
+    margin: 0 0 .6rem;
+    text-wrap: balance;
+    background-image: linear-gradient(100deg, #d8b4fe 0%, var(--purple) 45%, var(--pink) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .lede { color: var(--text-dim); margin: 0; max-width: 34rem; }
+
+  h2 {
+    font-size: 1.3rem;
+    letter-spacing: -.015em;
+    margin: 0 0 1rem;
+    display: flex;
+    align-items: baseline;
+    gap: .7rem;
+  }
+  h2 .n {
+    font-family: var(--mono);
+    font-size: .78rem;
+    color: var(--purple);
+    border: 1px solid var(--edge-hi);
+    border-radius: 999px;
+    padding: .12rem .55rem;
+    flex: none;
+  }
+
+  section { display: flex; flex-direction: column; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--edge);
+    border-radius: 14px;
+    padding: 1.15rem 1.25rem;
+  }
+  .stack { display: flex; flex-direction: column; gap: .85rem; }
+
+  /* --- the three URLs ------------------------------------------------ */
+  .urls { display: flex; flex-direction: column; gap: .7rem; }
+  .url {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: .25rem 1rem;
+    align-items: baseline;
+    background: var(--panel);
+    border: 1px solid var(--edge);
+    border-left: 3px solid var(--purple);
+    border-radius: 10px;
+    padding: .85rem 1rem;
+  }
+  .url .who {
+    font-family: var(--mono);
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--text-faint);
+    grid-column: 1 / -1;
+  }
+  .url code { font-size: .95rem; color: var(--text); word-break: break-all; grid-column: 1 / -1; }
+  .url .note { grid-column: 1 / -1; font-size: .82rem; color: var(--text-dim); }
+  .url.host   { border-left-color: var(--pink); }
+  .url.screen { border-left-color: var(--good); }
+
+  code, kbd {
+    font-family: var(--mono);
+    font-size: .88em;
+    background: rgba(0,0,0,.42);
+    border: 1px solid var(--edge);
+    border-radius: 6px;
+    padding: .1em .4em;
+  }
+  pre {
+    font-family: var(--mono);
+    font-size: .82rem;
+    background: rgba(0,0,0,.45);
+    border: 1px solid var(--edge);
+    border-radius: 10px;
+    padding: .85rem 1rem;
+    overflow-x: auto;
+    margin: 0;
+    color: #ddd3f5;
+  }
+  pre code { background: none; border: 0; padding: 0; font-size: inherit; }
+
+  /* --- the repeating loop -------------------------------------------- */
+  ol.loop { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .55rem; }
+  ol.loop li {
+    display: grid;
+    grid-template-columns: var(--step) 1fr;
+    gap: .9rem;
+    align-items: start;
+    background: var(--panel);
+    border: 1px solid var(--edge);
+    border-radius: 12px;
+    padding: .8rem .95rem;
+  }
+  ol.loop .btn {
+    font-family: var(--mono);
+    font-size: .7rem;
+    font-weight: 700;
+    color: var(--ink);
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    border-radius: 6px;
+    width: var(--step);
+    height: 1.6rem;
+    display: grid;
+    place-items: center;
+  }
+  ol.loop b { display: block; font-size: .97rem; }
+  ol.loop span { color: var(--text-dim); font-size: .88rem; }
+  ol.loop .say { color: var(--good); }
+
+  /* --- tables --------------------------------------------------------- */
+  .scroll { overflow-x: auto; border: 1px solid var(--edge); border-radius: 12px; }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; min-width: 30rem; }
+  th, td { text-align: left; padding: .65rem .85rem; border-bottom: 1px solid var(--edge); vertical-align: top; }
+  th {
+    font-family: var(--mono);
+    font-size: .68rem;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--text-faint);
+    background: var(--panel-hi);
+    font-weight: 600;
+  }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { color: var(--text); font-weight: 600; white-space: nowrap; }
+  td { color: var(--text-dim); }
+
+  /* --- callouts -------------------------------------------------------- */
+  .call {
+    border-radius: 12px;
+    padding: .9rem 1.1rem;
+    border: 1px solid;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+  }
+  .call .t { font-weight: 700; font-size: .95rem; }
+  .call p { margin: 0; font-size: .9rem; color: var(--text-dim); }
+  .call.warn { background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.35); }
+  .call.warn .t { color: var(--warn); }
+  .call.bad  { background: rgba(251,59,108,.08); border-color: rgba(251,59,108,.38); }
+  .call.bad .t { color: var(--bad); }
+  .call.good { background: rgba(34,197,94,.08); border-color: rgba(34,197,94,.35); }
+  .call.good .t { color: var(--good); }
+
+  ul.plain { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: .45rem; color: var(--text-dim); font-size: .92rem; }
+  ul.plain strong { color: var(--text); }
+
+  .check { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+  .check li { display: grid; grid-template-columns: 1.15rem 1fr; gap: .7rem; align-items: start; font-size: .93rem; color: var(--text-dim); }
+  .check li::before {
+    content: "";
+    width: 1.15rem; height: 1.15rem;
+    border: 1.5px solid var(--edge-hi);
+    border-radius: 5px;
+    margin-top: .18rem;
+  }
+  .check strong { color: var(--text); }
+
+  hr { border: 0; border-top: 1px solid var(--edge); margin: 0; }
+  a { color: var(--purple); }
+  footer { color: var(--text-faint); font-size: .82rem; text-align: center; }
+
+  @media (max-width: 30rem) {
+    ol.loop li { grid-template-columns: 1fr; gap: .5rem; }
+    ol.loop .btn { width: fit-content; padding: 0 .6rem; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Operator guide</p>
+    <h1>The Yashord Quiz</h1>
+    <p class="lede">
+      Everything you need to run the session. The middle section is the loop you
+      repeat 24 times — if you read nothing else, read that.
+    </p>
+  </header>
+
+  <!-- =============================================================== -->
+  <section>
+    <h2><span class="n">A</span> The three screens</h2>
+    <div class="urls">
+      <div class="url">
+        <span class="who">Students — put this on the board</span>
+        <code>https://your-app.vercel.app</code>
+        <span class="note">Name, roll number, and the join code <strong>QUIZ01</strong>. The screen previews the roll it will store as they type — tell them to remember that form.</span>
+      </div>
+      <div class="url host">
+        <span class="who">You — laptop or phone, kept private</span>
+        <code>https://your-app.vercel.app/host/control</code>
+        <span class="note">Shows the answer key. Never put this on the projector.</span>
+      </div>
+      <div class="url screen">
+        <span class="who">Projector — full screen, no controls on it</span>
+        <code>https://your-app.vercel.app/present</code>
+        <span class="note">Safe to display. The answer key is not in this page until you reveal it.</span>
+      </div>
+    </div>
+    <p style="color:var(--text-dim);font-size:.9rem;margin:.9rem 0 0">
+      Log in once at <code>/host/login</code> with your host password. The login
+      lasts 12 hours and works from any device — if your laptop dies, log in on
+      your phone and carry on from the same place.
+    </p>
+  </section>
+
+  <!-- =============================================================== -->
+  <section>
+    <h2><span class="n">B</span> 30 minutes before</h2>
+    <ul class="check">
+      <li><strong>Open <code>/api/health</code></strong> — should say <code>ok: true</code>, <code>questions: 24</code>, <code>phase: IDLE</code>.</li>
+      <li><strong>Set the roll prefixes</strong> in the host panel → Session → <em>Roll prefixes</em>. Enter them comma-separated, e.g. <code>22CS, 22IT</code>. Students then tap their prefix and type only the digits. <em>Do this before anyone joins.</em></li>
+      <li><strong>Open <code>/present</code> on the projector</strong> and full-screen it (<kbd>F11</kbd>). Check the back row can read it.</li>
+      <li><strong>Open <code>/host/control</code></strong> on your laptop. Confirm the phase badge says <code>IDLE</code>.</li>
+      <li><strong>Self-join once</strong> from your phone to prove the whole path works, then delete yourself from the Participants tab.</li>
+      <li><strong>Write the URL and code large</strong> on the board — students mistype URLs more than anything else.</li>
+      <li><strong>Have the questions in a PDF</strong> as a backup if the venue wifi collapses.</li>
+    </ul>
+  </section>
+
+  <!-- =============================================================== -->
+  <section>
+    <h2><span class="n">C</span> The loop — repeat for all 24</h2>
+    <ol class="loop">
+      <li>
+        <span class="btn">1</span>
+        <span>
+          <b>Start / Next Question</b>
+          <span>Question text appears. Options stay hidden so everyone reads before racing.</span>
+        </span>
+      </li>
+      <li>
+        <span class="btn">2</span>
+        <span>
+          <b>Show Options</b>
+          <span>The answer window opens and the timer starts. <em>This is the only phase that accepts answers.</em></span>
+        </span>
+      </li>
+      <li>
+        <span class="btn">3</span>
+        <span>
+          <b>Lock Answers</b>
+          <span>Optional — the timer closes the window on its own. Use it to cut a question short.</span>
+        </span>
+      </li>
+      <li>
+        <span class="btn">4</span>
+        <span>
+          <b>Pause on the distribution bar</b>
+          <span class="say">This is your teaching moment. You can see how many chose A/B/C/D before anyone knows the answer. Ask the room why — then reveal.</span>
+        </span>
+      </li>
+      <li>
+        <span class="btn">5</span>
+        <span>
+          <b>Reveal Answer</b>
+          <span>Correct option turns green everywhere. Students see their own result and points.</span>
+        </span>
+      </li>
+      <li>
+        <span class="btn">6</span>
+        <span>
+          <b>Show Solution</b>
+          <span>Displays the explanation. Skip it when you're running long.</span>
+        </span>
+      </li>
+    </ol>
+    <div class="call good" style="margin-top:1rem">
+      <span class="t">The leaderboard appears on its own</span>
+      <p>After questions 5, 10, 15 and 20 it interrupts automatically — press <b>Next</b> once to show it, and again to move to the next question. <b>Show Leaderboard</b> works at any time too.</p>
+    </div>
+    <div class="call warn" style="margin-top:.7rem">
+      <span class="t">Reveal is one-way</span>
+      <p>Once you reveal, that question can never reopen for answers. You can go back a question, but you can't take the answer key back. Reveal only when you mean it.</p>
+    </div>
+  </section>
+
+  <!-- =============================================================== -->
+  <section>
+    <h2><span class="n">D</span> Every control</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td>Start / Next Question</td><td>Advances. Also triggers the automatic leaderboard every 5th question.</td></tr>
+          <tr><td>Show Options</td><td>Opens the answer window and starts the timer.</td></tr>
+          <tr><td>Lock Answers</td><td>Closes it early.</td></tr>
+          <tr><td>Reveal Answer</td><td>Publishes the key. Cannot be undone back into answering.</td></tr>
+          <tr><td>Show Solution</td><td>Shows the explanation text.</td></tr>
+          <tr><td>Show Leaderboard</td><td>Available any time.</td></tr>
+          <tr><td>← Previous</td><td>Steps back a question.</td></tr>
+          <tr><td>Skip Question</td><td>Drops it live and renumbers. Use this if you're running out of time.</td></tr>
+          <tr><td>Reading / Answer secs</td><td>Editable mid-question. Extends the running countdown — does not restart it, so nobody gets a fresh speed bonus.</td></tr>
+          <tr><td>Lock joining</td><td>Stops new joins. Anyone already in can still rejoin.</td></tr>
+          <tr><td>Auto-advance</td><td>Fires transitions when a timer hits zero. Off by default. Needs the host page open.</td></tr>
+          <tr><td>Void this question</td><td>Zeroes its points for everyone. Reversible. Use it if an answer key turns out wrong.</td></tr>
+          <tr><td>Re-broadcast state</td><td>Nudges every device to refetch. Fixes a stuck screen.</td></tr>
+          <tr><td>Export CSV</td><td>Full results. <strong>Do this the moment the quiz ends.</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- =============================================================== -->
+  <section>
+    <h2><span class="n">E</span> When something goes wrong</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>They say</th><th>You do</th></tr></thead>
+        <tbody>
+          <tr><td>"My screen is stuck"</td><td>Press <b>Re-broadcast state</b>. If not, it self-corrects within 5 seconds anyway — every device re-checks the server on a timer.</td></tr>
+          <tr><td>"It says quiz is full"</td><td>You're at 185. If they joined before, entering the <em>same roll</em> always lets them back in even when full.</td></tr>
+          <tr><td>"I lost my score"</td><td>They joined twice with different roll spellings. Have them re-enter the roll <em>exactly as the join screen showed it</em> — the screen previews it as they type.</td></tr>
+          <tr><td>"My prefix isn't listed"</td><td>They tap <b>"My roll number looks different"</b> on the join screen and type the whole roll. Always available, so nobody is ever locked out by the prefix list.</td></tr>
+          <tr><td>You set a prefix wrong</td><td>Fix it in the host panel and press Save — it takes effect immediately, no redeploy. Anyone who already joined keeps their existing roll.</td></tr>
+          <tr><td>"I got disconnected"</td><td>Rejoin with the same roll. Score is intact and they land wherever the class currently is.</td></tr>
+          <tr><td>Answer key is wrong</td><td><b>Void this question</b>. Points zero out for everyone; the leaderboard updates immediately. Reversible.</td></tr>
+          <tr><td>Running out of time</td><td><b>Skip Question</b> on the ones you're happy to drop. Numbering adjusts for everyone.</td></tr>
+          <tr><td>Your laptop dies</td><td>Open <code>/host/control</code> on your phone, log in, continue. The state is on the server, not your laptop.</td></tr>
+          <tr><td>Projector shows the wrong thing</td><td>Refresh <code>/present</code>. It has no controls, so it can only ever mirror the server.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- =============================================================== -->
+  <section>
+    <h2><span class="n">F</span> The moment it ends</h2>
+    <div class="call bad">
+      <span class="t">Export the CSV before you close anything</span>
+      <p>Host panel → <b>Export CSV</b>. One row per student with per-question results. A free Supabase project pauses after inactivity, and you do not want to be recovering data later.</p>
+    </div>
+    <ul class="plain" style="margin-top:1rem">
+      <li>Press <strong>End session</strong> — students see final scores.</li>
+      <li>Leave <code>/present</code> on the final leaderboard while people file out.</li>
+    </ul>
+  </section>
+
+  <!-- =============================================================== -->
+  <section>
+    <h2><span class="n">G</span> How scoring works</h2>
+    <pre><code>wrong or unanswered  →  0            (no negative marking)
+correct              →  100 + up to 50 for speed</code></pre>
+    <ul class="plain" style="margin-top:.9rem">
+      <li>Fast correct answer ≈ <strong>150</strong>. Correct at the buzzer ≈ <strong>100</strong>. Wrong = <strong>0</strong>.</li>
+      <li>Correctness beats speed by design: a slow correct answer still beats a fast wrong one by 100 points.</li>
+      <li>Timing is measured on the server, so a student with a wrong phone clock gains nothing.</li>
+      <li>Ties share a rank — two students on 1,200 are both 2nd, and the next is 4th.</li>
+    </ul>
+    <p style="color:var(--text-dim);font-size:.9rem;margin:.9rem 0 0">
+      If someone asks about questions they missed while disconnected: they score
+      0 on anything that fully passed, but can answer anything still open. That's
+      the rule, and it's worth saying out loud once.
+    </p>
+  </section>
+
+  <hr>
+  <footer>Join code <strong style="color:var(--purple)">QUIZ01</strong> · cap 185 · 24 questions · ~12 min of timers</footer>
+
+</div>

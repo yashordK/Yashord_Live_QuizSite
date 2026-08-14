@@ -27,6 +27,7 @@ interface Dashboard {
     leaderboard_interval: number;
     join_cap: number;
     status: string;
+    roll_prefixes: string[];
   };
   counters: { joined: number; online: number; answered: number; flagged: number };
   distribution: Record<string, number>;
@@ -402,6 +403,20 @@ export default function HostControlPage() {
                   }
                 />
 
+                <PrefixEditor
+                  value={dash.settings.roll_prefixes ?? []}
+                  onSave={(list) =>
+                    post(
+                      "/api/host/settings",
+                      { roll_prefixes: list },
+                      list.length
+                        ? `Join screen now offers ${list.join(", ")}.`
+                        : "Prefix picker turned off — students type the full roll."
+                    )
+                  }
+                  busy={busy}
+                />
+
                 <Toggle
                   label="Auto-advance timers"
                   hint="Advances automatically when a countdown hits zero. Needs this page open."
@@ -618,6 +633,83 @@ function TimerInput({
         }}
       />
     </label>
+  );
+}
+
+/**
+ * Roll prefix picker config.
+ *
+ * Set this BEFORE students join. It changes the join screen from a
+ * free-text roll field to "tap your prefix, type the digits", which
+ * removes prefix typos at the source. Leave it empty for free text.
+ *
+ * It is never a gate — the join screen always keeps a fallback link for
+ * anyone whose prefix isn't listed.
+ */
+function PrefixEditor({
+  value,
+  onSave,
+  busy,
+}: {
+  value: string[];
+  onSave: (list: string[]) => void;
+  busy: boolean;
+}) {
+  const [draft, setDraft] = useState(value.join(", "));
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (!dirty) setDraft(value.join(", "));
+  }, [value, dirty]);
+
+  const parsed = draft
+    .split(",")
+    .map((p) => p.trim().toUpperCase().replace(/[^A-Z0-9]/g, ""))
+    .filter(Boolean);
+
+  return (
+    <div className="border-t border-edge pt-3">
+      <label className="block text-sm font-semibold">Roll prefixes</label>
+      <p className="mb-2 text-xs text-slate-500">
+        Comma-separated, e.g. <code>22CS, 22IT</code>. Students tap one and type
+        only the digits. Leave empty for free-text entry. Set this before anyone
+        joins.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <input
+          className="min-w-0 flex-1 rounded-lg border border-edge bg-ink px-3 py-2 font-mono text-sm uppercase"
+          value={draft}
+          placeholder="22CS, 22IT"
+          onChange={(e) => {
+            setDraft(e.target.value);
+            setDirty(true);
+          }}
+        />
+        <button
+          className="btn"
+          disabled={busy || !dirty}
+          onClick={() => {
+            onSave(parsed);
+            setDirty(false);
+          }}
+        >
+          Save
+        </button>
+      </div>
+      {parsed.length > 0 && (
+        <p className="mt-2 text-xs text-slate-400">
+          Join screen shows:{" "}
+          {parsed.map((p) => (
+            <span
+              key={p}
+              className="mr-1 rounded bg-accent/20 px-1.5 py-0.5 font-mono text-accent"
+            >
+              {p}
+            </span>
+          ))}
+        </p>
+      )}
+    </div>
   );
 }
 

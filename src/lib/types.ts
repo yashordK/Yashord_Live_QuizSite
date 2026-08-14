@@ -31,6 +31,8 @@ export interface SessionRow {
   auto_advance: boolean;
   leaderboard_interval: number;
   leaderboard_shown_after: number;
+  /** Optional prefixes offered on the join screen. Empty = free text. */
+  roll_prefixes: string[];
   state_version: number;
   created_at: string;
   updated_at: string;
@@ -140,6 +142,8 @@ export interface StatePayload {
     joining_locked: boolean;
     join_cap: number;
     joined_count: number;
+    /** Offered on the join screen; never used to reject a roll. */
+    roll_prefixes: string[];
   };
   question: PublicQuestion | null;
   question_number: number | null;

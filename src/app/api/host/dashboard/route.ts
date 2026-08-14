@@ -73,6 +73,9 @@ export async function GET() {
           leaderboard_interval: session.leaderboard_interval,
           join_cap: session.join_cap,
           status: session.status,
+          roll_prefixes: Array.isArray(session.roll_prefixes)
+            ? session.roll_prefixes
+            : [],
         },
         counters: {
           joined: state.session.joined_count,

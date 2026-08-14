@@ -41,14 +41,44 @@ export default function JoinPage() {
   const [error, setError] = useState<string | null>(null);
   const [blocked, setBlocked] = useState<Blocked>(null);
 
+  // Prefix picker. Empty list = plain free-text entry.
+  const [prefixes, setPrefixes] = useState<string[]>([]);
+  const [prefix, setPrefix] = useState<string>("");
+  // The escape hatch. A student whose prefix isn't on the list must
+  // always be able to join — locked out is worse than a typo.
+  const [freeText, setFreeText] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/state", { cache: "no-store" });
+        if (!res.ok) return;
+        const s = await res.json();
+        const list: string[] = s?.session?.roll_prefixes ?? [];
+        if (!cancelled && Array.isArray(list) && list.length > 0) {
+          setPrefixes(list);
+          setPrefix((p) => p || list[0]);
+        }
+      } catch {
+        // Prefixes are a convenience; free-text entry still works.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const usingPicker = prefixes.length > 0 && !freeText;
+
   // Show the canonical form as they type. Display-only — the server
   // normalizes again and its result is what's stored.
   const canonicalPreview = useMemo(() => {
-    const c = normalizeRoll(roll, PREVIEW_PAD);
+    const c = normalizeRoll(usingPicker ? prefix + roll : roll, PREVIEW_PAD);
     // Don't show it until it looks like a real roll, otherwise it flickers
     // nonsense at them after the first keystroke.
     return c.length >= 3 && /\d/.test(c) && /^[A-Z0-9]+$/.test(c) ? c : "";
-  }, [roll]);
+  }, [roll, prefix, usingPicker]);
 
   // Remember what they typed so a refresh mid-lecture isn't a retype.
   useEffect(() => {
@@ -76,6 +106,8 @@ export default function JoinPage() {
         body: JSON.stringify({
           name,
           roll,
+          // Sent separately; the server concatenates and re-normalizes.
+          roll_prefix: usingPicker ? prefix : undefined,
           code,
           device_token: getDeviceToken(),
         }),
@@ -165,18 +197,53 @@ export default function JoinPage() {
           <label htmlFor="roll" className="mb-2 block text-sm font-medium text-slate-300">
             Roll number
           </label>
-          <input
-            id="roll"
-            className="field uppercase"
-            value={roll}
-            onChange={(e) => setRoll(e.target.value)}
-            autoCapitalize="characters"
-            autoCorrect="off"
-            spellCheck={false}
-            enterKeyHint="next"
-            maxLength={25}
-            required
-          />
+
+          {usingPicker && (
+            <div
+              className="mb-2 flex flex-wrap gap-2"
+              role="radiogroup"
+              aria-label="Roll number prefix"
+            >
+              {prefixes.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  role="radio"
+                  aria-checked={prefix === p}
+                  onClick={() => setPrefix(p)}
+                  className={`rounded-xl border-2 px-4 py-3 font-mono text-base font-bold transition-colors ${
+                    prefix === p
+                      ? "border-accent bg-accent/20 text-white"
+                      : "border-edge bg-panel/80 text-slate-300"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className={usingPicker ? "flex items-stretch gap-2" : ""}>
+            {usingPicker && (
+              <span className="flex select-none items-center rounded-xl border-2 border-edge bg-edge/40 px-4 font-mono text-lg font-bold text-slate-300">
+                {prefix}
+              </span>
+            )}
+            <input
+              id="roll"
+              className="field uppercase"
+              value={roll}
+              onChange={(e) => setRoll(e.target.value)}
+              inputMode={usingPicker ? "numeric" : "text"}
+              placeholder={usingPicker ? "101" : ""}
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
+              enterKeyHint="next"
+              maxLength={usingPicker ? 8 : 25}
+              required
+            />
+          </div>
           {canonicalPreview ? (
             <p className="mt-2 text-xs text-slate-400">
               You&apos;ll join as{" "}
@@ -187,8 +254,27 @@ export default function JoinPage() {
             </p>
           ) : (
             <p className="mt-2 text-xs text-slate-500">
-              Spaces, dashes and capitals don&apos;t matter.
+              {usingPicker
+                ? "Pick your prefix, then type just the numbers."
+                : "Spaces, dashes and capitals don't matter."}
             </p>
+          )}
+
+          {/* The escape hatch. Never remove this: a student whose prefix
+              isn't on the list must still be able to join. */}
+          {prefixes.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setFreeText((f) => !f);
+                setRoll("");
+              }}
+              className="mt-2 text-xs font-medium text-accent underline underline-offset-2"
+            >
+              {freeText
+                ? "← Pick from the list instead"
+                : "My roll number looks different"}
+            </button>
           )}
         </div>
 

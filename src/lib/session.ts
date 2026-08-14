@@ -171,6 +171,9 @@ export async function buildStatePayload(
       joining_locked: session.joining_locked,
       join_cap: session.join_cap,
       joined_count: raw.joined_count,
+      roll_prefixes: Array.isArray(session.roll_prefixes)
+        ? session.roll_prefixes
+        : [],
     },
     question,
     question_number: raw.question_number,
