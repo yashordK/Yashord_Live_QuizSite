@@ -47,24 +47,60 @@ export default function HostControlPage() {
 
   const clockOffset = useRef(0);
 
+  // A single failed poll is meaningless — the next one recovers. A RUN of
+  // them is not, and silently retrying forever leaves the host staring at
+  // a spinner with no idea why. We surface the reason after a couple of
+  // consecutive failures. (This is exactly what a paused Supabase project
+  // looks like: login succeeds, then the panel never loads.)
+  const [fails, setFails] = useState(0);
+  const [diagnosis, setDiagnosis] = useState<string | null>(null);
+  const lastOkRef = useRef<number | null>(null);
+
   const load = useCallback(async () => {
     try {
+      // Fail fast rather than hanging on a dead database. Without this a
+      // request against an unreachable Supabase can sit for 30s.
+      const ctl = new AbortController();
+      const killer = setTimeout(() => ctl.abort(), 8000);
+
       const res = await fetch("/api/host/dashboard", {
         cache: "no-store",
         credentials: "same-origin",
-      });
+        signal: ctl.signal,
+      }).finally(() => clearTimeout(killer));
 
       if (res.status === 401) {
         router.replace("/host/login");
         return;
       }
-      if (!res.ok) return;
+
+      if (!res.ok) {
+        setFails((n) => n + 1);
+        // /api/health names the actual problem and how to fix it.
+        try {
+          const h = await fetch("/api/health", { cache: "no-store" }).then((r) =>
+            r.json()
+          );
+          if (h?.problem) {
+            setDiagnosis(h.hint ? `${h.problem}. ${h.hint}` : h.problem);
+          }
+        } catch {
+          /* health is best-effort */
+        }
+        return;
+      }
 
       const d = (await res.json()) as Dashboard;
       clockOffset.current = Date.parse(d.state.server_now) - Date.now();
+      lastOkRef.current = Date.now();
       setDash(d);
+      setFails(0);
+      setDiagnosis(null);
     } catch {
-      /* transient; the next poll will pick it up */
+      setFails((n) => n + 1);
+      setDiagnosis(
+        "Could not reach the server. Check your connection, and check the Supabase project is running (a free project pauses after about a week idle)."
+      );
     }
   }, [router]);
 
@@ -156,6 +192,39 @@ export default function HostControlPage() {
     void act(phase === "QUESTION_ONLY" ? "SHOW_OPTIONS" : "LOCK");
   }, [dash, remaining, act]);
 
+  // Never loaded AND failing: show the reason, not an endless spinner.
+  if (!dash && fails >= 2) {
+    return (
+      <main className="flex min-h-dvh items-center justify-center px-6">
+        <div className="card max-w-lg">
+          <h1 className="mb-2 text-lg font-bold text-bad">
+            Can&apos;t reach the quiz server
+          </h1>
+          <p className="mb-3 text-sm text-slate-300">
+            You are logged in — your password was accepted. The control panel
+            itself can&apos;t load its data.
+          </p>
+          {diagnosis && (
+            <p className="mb-3 rounded-lg border border-edge bg-ink px-3 py-2 font-mono text-xs text-slate-400">
+              {diagnosis}
+            </p>
+          )}
+          <p className="mb-4 text-sm text-slate-400">
+            Most likely the Supabase project is paused. Open the Supabase
+            dashboard and press Restore, wait a minute, then reload this page.
+            Your questions and any scores are preserved while paused.
+          </p>
+          <button className="btn btn-primary" onClick={() => void load()}>
+            Try again
+          </button>
+          <span className="ml-3 text-xs text-slate-500">
+            {fails} failed attempt{fails === 1 ? "" : "s"}
+          </span>
+        </div>
+      </main>
+    );
+  }
+
   if (!dash) {
     return (
       <main className="flex min-h-dvh items-center justify-center">
@@ -180,6 +249,19 @@ export default function HostControlPage() {
         remaining={remaining}
         status={dash.settings.status}
       />
+
+      {/* Lost the server mid-session. Keep the last known state on screen
+          (it is still broadly correct) but never let it look live. */}
+      {fails >= 2 && (
+        <div className="border-b border-bad/40 bg-bad/10 px-3 py-2.5 text-sm text-red-200 sm:px-6">
+          <b>Lost connection to the server.</b> Showing the last state received
+          {lastOkRef.current
+            ? ` ${Math.round((Date.now() - lastOkRef.current) / 1000)}s ago`
+            : ""}
+          . Buttons will not take effect until this clears.
+          {diagnosis ? ` ${diagnosis}` : ""}
+        </div>
+      )}
 
       {/* The qualifying cut splits a tie — decide deliberately before
           this reaches the projector. */}

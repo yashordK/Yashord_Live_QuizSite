@@ -119,7 +119,7 @@ with checks as (
            'code=' || code || ' phase=' || phase || ' status=' || status ||
            ' cap=' || join_cap, ', '), 'no session')
   from public.sessions
-
+ 
   -- 10 -----------------------------------------------------------------
   union all
   select 10,

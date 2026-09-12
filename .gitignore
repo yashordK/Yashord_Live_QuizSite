@@ -19,3 +19,6 @@ next-env.d.ts
 data/questions.json
 data/questions.csv
 loadtest/results/
+
+# Event results — contains student names and roll numbers
+exports/
