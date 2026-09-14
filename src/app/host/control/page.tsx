@@ -430,6 +430,7 @@ export default function HostControlPage() {
                   <PhaseButton label="Reveal Answer" action="REVEAL" onAct={act} busy={busy} />
                   <PhaseButton label="Show Solution" action="SOLUTION" onAct={act} busy={busy} />
                   <PhaseButton label="Show Leaderboard" action="LEADERBOARD" onAct={act} busy={busy} />
+                  <PhaseButton label="🏆 Show Top 3" action="PODIUM" onAct={act} busy={busy} />
                   <PhaseButton label="← Previous" action="PREV" onAct={act} busy={busy} />
                   <PhaseButton label="Skip Question" action="SKIP" onAct={act} busy={busy} />
                 </div>
@@ -626,6 +627,7 @@ function TopBar({
     REVEALED: "bg-purple-600",
     SOLUTION: "bg-purple-800",
     LEADERBOARD: "bg-pink-600",
+    PODIUM: "bg-warn text-ink",
   };
 
   return (

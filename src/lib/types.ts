@@ -6,6 +6,7 @@ export const PHASES = [
   "REVEALED",
   "SOLUTION",
   "LEADERBOARD",
+  "PODIUM",
 ] as const;
 
 export type Phase = (typeof PHASES)[number];

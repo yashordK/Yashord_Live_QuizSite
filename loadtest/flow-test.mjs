@@ -162,7 +162,10 @@ await host("POST", "/api/host/question", { question_id: q5Id, skipped: false });
 // ---- participants -----------------------------------------------------
 console.log("\n-- participants + export --");
 const parts = (await host("GET", "/api/host/participants")).body;
-check("participants endpoint returns every student", parts.participants?.length === N, `got ${parts.participants?.length}`);
+// Count only this run's FT rows: a real session may already hold other
+// participants (a demo, an earlier join), and the endpoint is right to return them.
+const ours = (parts.participants ?? []).filter((p) => String(p.roll_number).startsWith("FT"));
+check("participants endpoint returns every test student", ours.length === N, `got ${ours.length} of ${N} (session total ${parts.participants?.length})`);
 const first = parts.participants?.find(p => p.roll_number === "FT001");
 check("per-question correctness recorded", Object.keys(first?.answers ?? {}).length === 6, `${Object.keys(first?.answers ?? {}).length} answers`);
 check("always-correct student is 6/6", first?.correct_count === 6, `correct_count=${first?.correct_count}`);
@@ -170,7 +173,8 @@ check("always-correct student is 6/6", first?.correct_count === 6, `correct_coun
 // ---- CSV --------------------------------------------------------------
 const csv = (await host("GET", "/api/host/export")).body;
 const lines = String(csv).trim().split(/\r?\n/);
-check("CSV has a header plus one row per student", lines.length === N + 1, `${lines.length} lines for ${N} students`);
+const ftRows = lines.slice(1).filter((l) => /(^|,)"?FT[0-9]{3}"?(,|$)/.test(l)).length;
+check("CSV has a header plus one row per test student", ftRows === N && lines.length >= N + 1, `${ftRows} FT rows of ${N}, ${lines.length} lines total`);
 check("CSV header has identity columns", /rank.*name.*roll_number.*total_score/i.test(lines[0]), lines[0]?.slice(0, 80));
 check("CSV has a column group per question", (lines[0].match(/Q\d+ choice/g) ?? []).length >= 6, `${(lines[0].match(/Q\d+ choice/g) ?? []).length} question columns`);
 check("CSV contains the students", lines.some(l => l.includes("FT001")));

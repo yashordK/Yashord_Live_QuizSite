@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useQuizState, useCountdown } from "@/lib/useQuizState";
 import { Leaderboard } from "@/components/Leaderboard";
-import { QuestionBody } from "@/components/QuestionBody";
+import { FlyInText } from "@/components/fx/FlyInText";
+import { Podium } from "@/components/fx/Podium";
+import { burst } from "@/components/fx/confetti";
+import { useOnce } from "@/components/fx/core";
 import type { LeaderboardEntry } from "@/lib/types";
 
 /**
@@ -30,7 +33,7 @@ export default function PresentPage() {
   );
 
   const [board, setBoard] = useState<LeaderboardEntry[]>([]);
-  const showsBoard = phase === "LEADERBOARD";
+  const showsBoard = phase === "LEADERBOARD" || phase === "PODIUM";
   const stateVersion = state?.state_version;
 
   useEffect(() => {
@@ -50,6 +53,25 @@ export default function PresentPage() {
       cancelled = true;
     };
   }, [showsBoard, stateVersion]);
+
+  // ---- motion ---------------------------------------------------------
+  const qid = question?.id;
+  const optsMode = useOnce(question?.options && qid ? `present-opts:${qid}` : null);
+  const revealMode = useOnce(
+    (phase === "REVEALED" || phase === "SOLUTION") && qid ? `present-reveal:${qid}` : null
+  );
+  const correctCardRef = useRef<HTMLDivElement | null>(null);
+
+  // The room's moment: confetti bursts out of the right answer's card.
+  useEffect(() => {
+    if (revealMode !== "animate") return;
+    const id = window.setTimeout(() => {
+      const r = correctCardRef.current?.getBoundingClientRect();
+      if (!r) return;
+      burst({ x: r.left + r.width / 2, y: r.top + r.height / 2, count: 150, spread: 360, power: 15 });
+    }, 260);
+    return () => clearTimeout(id);
+  }, [revealMode]);
 
   if (!state) {
     return (
@@ -89,7 +111,7 @@ export default function PresentPage() {
           {remaining !== null && (
             <span
               className={`font-mono font-bold tabular-nums ${
-                urgent ? "text-warn" : "text-accent"
+                urgent ? "text-warn timer-urgent" : "text-accent"
               }`}
               style={{ fontSize: "clamp(1.75rem, 3.5vw, 4rem)" }}
             >
@@ -122,19 +144,22 @@ export default function PresentPage() {
       <main className="flex min-h-0 flex-1 flex-col justify-center py-6">
         {phase === "IDLE" && (
           <div className="text-center">
-            <h1 className="text-present font-bold">{state.session.title}</h1>
+            <h1 className="brand title-float text-present font-bold">{state.session.title}</h1>
             <p className="mt-10 text-5xl text-slate-400">
               {state.session.joining_locked
                 ? "Joining is closed"
                 : "Join now — the quiz starts shortly"}
             </p>
             <p className="mt-14 text-3xl text-slate-500">
-              {state.session.joined_count} / {state.session.join_cap} joined
+              <span key={state.session.joined_count} className="count-pop">
+                {state.session.joined_count}
+              </span>{" "}
+              / {state.session.join_cap} joined
             </p>
           </div>
         )}
 
-        {question && phase !== "IDLE" && phase !== "LEADERBOARD" && (
+        {question && phase !== "IDLE" && phase !== "LEADERBOARD" && phase !== "PODIUM" && (
           <>
             {/*
               Type scales with the viewport rather than using fixed sizes.
@@ -145,7 +170,9 @@ export default function PresentPage() {
               on a big screen and lets it shrink rather than overflow on a
               short one.
             */}
-            <QuestionBody
+            <FlyInText
+              id={question.id}
+              variant="stage"
               text={question.question_text}
               className="shrink-0 font-bold leading-tight"
               codeStyle={{
@@ -186,23 +213,35 @@ export default function PresentPage() {
                     : "grid-cols-1"
                 }`}
               >
-                {question.options.map((o) => {
-                  const isCorrect =
-                    question.correct_option !== null &&
-                    o.key === question.correct_option;
-                  const dim =
-                    question.correct_option !== null && !isCorrect;
+                {question.options.map((o, i) => {
+                  // Hold the reveal look for the one "pending" frame so the
+                  // stamp animation starts from the un-revealed state.
+                  const revealed = question.correct_option !== null && revealMode !== "pending";
+                  const isCorrect = revealed && o.key === question.correct_option;
+                  const dim = revealed && !isCorrect;
+                  const motion =
+                    revealMode === "animate" && revealed
+                      ? isCorrect
+                        ? " reveal-stamp"
+                        : " reveal-sink"
+                      : optsMode === "animate"
+                        ? " option-in"
+                        : optsMode === "pending"
+                          ? " fx-wait"
+                          : "";
 
                   return (
                     <div
                       key={o.key}
+                      ref={o.key === question.correct_option ? correctCardRef : undefined}
                       className={`flex min-w-0 items-center gap-[2vw] rounded-2xl border-4 px-[2vw] py-[1.5vh] ${
                         isCorrect
                           ? "border-good bg-good/25"
                           : dim
-                            ? "border-edge bg-panel opacity-40"
+                            ? `border-edge bg-panel${revealMode === "animate" ? "" : " opacity-40"}`
                             : "border-edge bg-panel"
-                      }`}
+                      }${motion}`}
+                      style={{ "--odl": `${60 + i * 70}ms`, "--sdl": `${i * 90}ms` } as CSSProperties}
                     >
                       <span
                         className="flex shrink-0 items-center justify-center rounded-xl bg-edge font-bold"
@@ -256,6 +295,16 @@ export default function PresentPage() {
           </>
         )}
 
+        {phase === "PODIUM" && (
+          <Podium
+            key={state.session.phase_started_at}
+            entries={board.slice(0, 3)}
+            startedAt={state.session.phase_started_at}
+            serverNow={serverNow}
+            eyebrow={state.session.title}
+          />
+        )}
+
         {phase === "LEADERBOARD" && (
           <div className="mx-auto flex h-full w-full max-w-[92vw] flex-col">
             <h1
@@ -281,12 +330,13 @@ export default function PresentPage() {
                 board.length > 12 ? "grid-cols-2" : "grid-cols-1"
               }`}
             >
-              {board.map((e) => {
+              {board.map((e, i) => {
                 const mine = false;
                 return (
                   <div
                     key={e.roll_number}
-                    className="flex min-w-0 items-center gap-[1.2vw] rounded-lg border border-edge bg-panel px-[1.2vw] py-[0.7vh]"
+                    className="lb-row-in flex min-w-0 items-center gap-[1.2vw] rounded-lg border border-edge bg-panel px-[1.2vw] py-[0.7vh]"
+                    style={{ "--odl": `${i * 45}ms` } as CSSProperties}
                   >
                     <span
                       className="w-[2.6em] shrink-0 text-center font-mono font-bold tabular-nums text-slate-400"

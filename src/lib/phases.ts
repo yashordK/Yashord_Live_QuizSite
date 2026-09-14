@@ -29,6 +29,7 @@ export type HostAction =
   | "REVEAL"
   | "SOLUTION"
   | "LEADERBOARD"
+  | "PODIUM"
   | "NEXT"
   | "PREV"
   | "SKIP"
@@ -77,8 +78,8 @@ const LEGAL_FROM: Record<HostAction, Phase[]> = {
   SHOW_OPTIONS: ["QUESTION_ONLY", "LOCKED"],
   LOCK: ["ACCEPTING_ANSWERS"],
   // REVEAL from ACCEPTING_ANSWERS implicitly locks first.
-  REVEAL: ["ACCEPTING_ANSWERS", "LOCKED", "LEADERBOARD"],
-  SOLUTION: ["REVEALED", "LEADERBOARD"],
+  REVEAL: ["ACCEPTING_ANSWERS", "LOCKED", "LEADERBOARD", "PODIUM"],
+  SOLUTION: ["REVEALED", "LEADERBOARD", "PODIUM"],
   LEADERBOARD: [
     "QUESTION_ONLY",
     "ACCEPTING_ANSWERS",
@@ -86,6 +87,17 @@ const LEGAL_FROM: Record<HostAction, Phase[]> = {
     "REVEALED",
     "SOLUTION",
     "LEADERBOARD",
+    "PODIUM",
+  ],
+  // The top-three reveal on the projector. Pressing it again replays it.
+  PODIUM: [
+    "QUESTION_ONLY",
+    "ACCEPTING_ANSWERS",
+    "LOCKED",
+    "REVEALED",
+    "SOLUTION",
+    "LEADERBOARD",
+    "PODIUM",
   ],
   NEXT: [
     "IDLE",
@@ -95,6 +107,7 @@ const LEGAL_FROM: Record<HostAction, Phase[]> = {
     "REVEALED",
     "SOLUTION",
     "LEADERBOARD",
+    "PODIUM",
   ],
   PREV: [
     "QUESTION_ONLY",
@@ -103,6 +116,7 @@ const LEGAL_FROM: Record<HostAction, Phase[]> = {
     "REVEALED",
     "SOLUTION",
     "LEADERBOARD",
+    "PODIUM",
   ],
   SKIP: [
     "QUESTION_ONLY",
@@ -119,6 +133,7 @@ const LEGAL_FROM: Record<HostAction, Phase[]> = {
     "REVEALED",
     "SOLUTION",
     "LEADERBOARD",
+    "PODIUM",
   ],
   RESET: [
     "IDLE",
@@ -128,6 +143,7 @@ const LEGAL_FROM: Record<HostAction, Phase[]> = {
     "REVEALED",
     "SOLUTION",
     "LEADERBOARD",
+    "PODIUM",
   ],
 };
 
@@ -245,7 +261,12 @@ export function applyAction(
       // multiple of the interval, show the leaderboard once before
       // moving on. `leaderboardShownAfter` stops it re-triggering if the
       // host navigates back across the same boundary.
-      if (action === "NEXT" && current && state.phase !== "LEADERBOARD") {
+      if (
+        action === "NEXT" &&
+        current &&
+        state.phase !== "LEADERBOARD" &&
+        state.phase !== "PODIUM"
+      ) {
         const n = questionNumber(ctx.questions, current.order_index);
         const interval = ctx.leaderboardInterval;
         if (
@@ -355,6 +376,16 @@ export function applyAction(
       return {
         phase: "LEADERBOARD",
         status: "live",
+        currentIndex: state.currentIndex,
+        durationSec: null,
+        leaderboardShownAfter: state.leaderboardShownAfter,
+      };
+
+    case "PODIUM":
+      return {
+        phase: "PODIUM",
+        // Revealing the podium after END must not reopen the session.
+        status: state.status === "ended" ? "ended" : "live",
         currentIndex: state.currentIndex,
         durationSec: null,
         leaderboardShownAfter: state.leaderboardShownAfter,

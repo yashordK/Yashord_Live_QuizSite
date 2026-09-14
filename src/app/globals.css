@@ -136,3 +136,1098 @@ body {
   height: 100dvh;
   overflow: hidden;
 }
+
+/* =====================================================================
+   MOTION
+   Everything below animates transform and opacity only, except a few
+   short, single-element filter/text-shadow moments. That is what keeps
+   it smooth on the budget phones a lecture hall is actually full of.
+   ===================================================================== */
+
+/* First frame, before a component knows whether to animate. */
+.fx-wait {
+  opacity: 0 !important;
+}
+
+/* ---- question assembles itself ------------------------------------- */
+
+.fly-word,
+.fly-block {
+  animation: fly-in var(--fdur, 820ms) cubic-bezier(0.18, 0.9, 0.22, 1.18) var(--fdl, 0ms) both;
+  will-change: transform, opacity;
+}
+.fly-word {
+  display: inline-block;
+}
+.fly-word--stage {
+  animation-name: fly-in-weld;
+}
+
+@keyframes fly-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(var(--fx), var(--fy), 0) rotate(var(--fr)) scale(var(--fs));
+  }
+  55% {
+    opacity: 1;
+  }
+  78% {
+    transform: translate3d(0, 0, 0) rotate(calc(var(--fr) * -0.06)) scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Projector variant: each word flashes a weld glow as it lands. */
+@keyframes fly-in-weld {
+  0% {
+    opacity: 0;
+    transform: translate3d(var(--fx), var(--fy), 0) rotate(var(--fr)) scale(var(--fs));
+  }
+  55% {
+    opacity: 1;
+    text-shadow: none;
+  }
+  78% {
+    transform: translate3d(0, 0, 0) rotate(calc(var(--fr) * -0.06)) scale(1.06);
+    text-shadow: 0 0 0.35em rgba(236, 72, 153, 0.95), 0 0 0.9em rgba(168, 85, 247, 0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+    text-shadow: none;
+  }
+}
+
+/* Options must be readable and tappable almost instantly: the answer
+   timer (and the speed bonus) starts on the server when they're shown, so
+   every millisecond of entrance is a millisecond off every student's
+   window. Fully opaque by ~35% of a 0.42s run; the settle is cosmetic. */
+.option-in,
+.lb-row-in {
+  animation: option-in 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.15) var(--odl, 0ms) both;
+}
+@keyframes option-in {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---- reveal: correct ------------------------------------------------ */
+
+.reveal-correct {
+  position: relative;
+  overflow: hidden;
+  animation:
+    reveal-pop 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) both,
+    correct-glow 1.9s ease-out 0.2s both;
+}
+.reveal-correct::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.38) 50%, transparent 70%);
+  transform: translateX(-120%);
+  animation: shine 1s ease-out 0.25s both;
+}
+@keyframes reveal-pop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.07);
+  }
+  60% {
+    transform: scale(0.98);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes correct-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  40% {
+    box-shadow: 0 0 0 10px rgba(34, 197, 94, 0.22), 0 0 44px rgba(34, 197, 94, 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0), 0 0 22px rgba(34, 197, 94, 0.25);
+  }
+}
+@keyframes shine {
+  to {
+    transform: translateX(120%);
+  }
+}
+
+/* Projector: the right answer gets stamped, the rest sink away. */
+.reveal-stamp {
+  position: relative;
+  animation:
+    stamp 0.75s cubic-bezier(0.2, 1.5, 0.35, 1) both,
+    correct-glow 2.2s ease-out 0.25s both;
+}
+@keyframes stamp {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.1) rotate(-1deg);
+  }
+  55% {
+    transform: scale(0.97);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.reveal-sink {
+  animation: sink 0.7s ease-in var(--sdl, 0ms) both;
+}
+@keyframes sink {
+  to {
+    opacity: 0.35;
+    transform: translateY(10px) scale(0.97);
+  }
+}
+
+/* ---- reveal: wrong -------------------------------------------------- */
+
+.reveal-wrong {
+  animation: shake-x 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+@keyframes shake-x {
+  10%,
+  90% {
+    transform: translateX(-2px);
+  }
+  20%,
+  80% {
+    transform: translateX(4px);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translateX(-8px);
+  }
+  40%,
+  60% {
+    transform: translateX(8px);
+  }
+}
+
+.brick-wall {
+  position: relative;
+}
+.brick-wall.is-cracking {
+  animation: wall-shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+.brick {
+  display: inline-block;
+}
+.brick-block {
+  display: block;
+}
+/* The sentence turns to masonry: each chunk becomes a brick with mortar. */
+.brick-wall .brick {
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(251, 59, 108, 0.3), rgba(124, 58, 237, 0.24));
+  box-shadow:
+    inset 0 0 0 1px rgba(7, 5, 12, 0.9),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.35);
+  color: #ffe4ea;
+}
+.brick-wall.is-falling .brick {
+  animation: brick-fall var(--bdur, 1.6s) cubic-bezier(0.5, 0, 0.9, 0.45) var(--bdl, 0ms) both;
+  will-change: transform;
+}
+@keyframes wall-shake {
+  0%,
+  100% {
+    transform: none;
+  }
+  15% {
+    transform: translate(-6px, 1px) rotate(-0.6deg);
+  }
+  30% {
+    transform: translate(7px, -1px) rotate(0.6deg);
+  }
+  45% {
+    transform: translate(-5px, 2px);
+  }
+  60% {
+    transform: translate(4px, -1px);
+  }
+  75% {
+    transform: translate(-2px, 1px);
+  }
+}
+@keyframes brick-fall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0);
+    opacity: 1;
+  }
+  14% {
+    transform: translate3d(calc(var(--bx) * 0.06), -18px, 0) rotate(calc(var(--br) * 0.08));
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--bx), 110vh, 0) rotate(var(--br));
+    opacity: 0.15;
+  }
+}
+
+.crack {
+  position: absolute;
+  left: -2%;
+  top: -6%;
+  width: 104%;
+  height: 112%;
+  overflow: visible;
+  pointer-events: none;
+}
+.crack path {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  filter: drop-shadow(0 0 4px rgba(251, 59, 108, 0.95));
+  animation: crack-draw 0.38s ease-out 0.08s forwards;
+}
+.brick-wall.is-falling .crack {
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+@keyframes crack-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.crumble-ghost {
+  animation: ghost-in 0.8s ease-out both;
+}
+@keyframes ghost-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.42;
+  }
+}
+
+.result-pop {
+  animation: result-pop 0.6s cubic-bezier(0.2, 1.3, 0.35, 1) var(--rdl, 0ms) both;
+}
+@keyframes result-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---- Bolt ------------------------------------------------------------ */
+
+.bolt {
+  display: block;
+  overflow: visible;
+}
+.bolt .rig,
+.bolt .arm,
+.bolt .spark,
+.bolt .tear,
+.bolt .drop,
+.bolt .core,
+.bolt .bulb,
+.bolt .cloud,
+.bolt .sweat,
+.bolt .qmark,
+.bolt .eyes {
+  transform-box: fill-box;
+}
+
+.bolt .bulb {
+  transform-origin: center;
+  animation: bulb 1.2s ease-in-out infinite;
+}
+@keyframes bulb {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.bolt-happy .rig {
+  transform-origin: 50% 100%;
+  animation: bolt-hop 0.95s cubic-bezier(0.3, 0.7, 0.4, 1) infinite;
+}
+.bolt-happy .bulb {
+  animation-duration: 0.35s;
+}
+.bolt-happy .arm-l {
+  transform-origin: 100% 100%;
+  animation: arm-l 0.42s ease-in-out infinite alternate;
+}
+.bolt-happy .arm-r {
+  transform-origin: 0% 100%;
+  animation: arm-r 0.42s ease-in-out infinite alternate;
+}
+.bolt-happy .core {
+  transform-origin: center;
+  animation: core-pulse 0.5s ease-in-out infinite alternate;
+}
+.bolt .spark {
+  transform-origin: center;
+  animation: twinkle 1.1s ease-in-out infinite;
+}
+@keyframes bolt-hop {
+  0%,
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+  15% {
+    transform: translateY(0) scale(1.08, 0.9);
+  }
+  45% {
+    transform: translateY(-22px) scale(0.95, 1.06);
+  }
+  75% {
+    transform: translateY(0) scale(1.05, 0.95);
+  }
+}
+@keyframes arm-l {
+  from {
+    transform: rotate(-14deg);
+  }
+  to {
+    transform: rotate(16deg);
+  }
+}
+@keyframes arm-r {
+  from {
+    transform: rotate(14deg);
+  }
+  to {
+    transform: rotate(-16deg);
+  }
+}
+@keyframes core-pulse {
+  from {
+    transform: scale(0.85);
+  }
+  to {
+    transform: scale(1.3);
+  }
+}
+@keyframes twinkle {
+  0%,
+  100% {
+    transform: scale(0.2) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1) rotate(45deg);
+    opacity: 1;
+  }
+}
+
+.bolt-sad .rig {
+  transform-origin: 50% 100%;
+  animation: sulk 3.2s ease-in-out infinite;
+}
+.bolt .tear,
+.bolt .sweat {
+  transform-origin: 50% 0%;
+  animation: tear 1.5s ease-in infinite;
+}
+.bolt .sweat {
+  animation-duration: 1.9s;
+}
+.bolt .cloud {
+  animation: cloud-bob 2.6s ease-in-out infinite;
+}
+.bolt .drop {
+  animation: drop 0.8s linear infinite;
+}
+@keyframes sulk {
+  0%,
+  100% {
+    transform: translateY(4px) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(7px) rotate(3deg);
+  }
+}
+@keyframes tear {
+  0% {
+    transform: translateY(0) scale(0.3);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+    transform: translateY(2px) scale(1);
+  }
+  100% {
+    transform: translateY(48px) scale(0.9);
+    opacity: 0;
+  }
+}
+@keyframes cloud-bob {
+  0%,
+  100% {
+    transform: translateX(-3px);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+}
+@keyframes drop {
+  0% {
+    transform: translateY(-2px);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(34px);
+    opacity: 0;
+  }
+}
+
+.bolt-missed .rig {
+  transform-origin: 50% 100%;
+  animation: tilt 2.4s ease-in-out infinite;
+}
+.bolt-missed .arm-r {
+  transform-origin: 0% 100%;
+  animation: scratch 0.35s ease-in-out infinite alternate;
+}
+.bolt .qmark {
+  animation: q-float 1.8s ease-in-out infinite;
+}
+@keyframes tilt {
+  0%,
+  100% {
+    transform: rotate(-7deg);
+  }
+  50% {
+    transform: rotate(6deg);
+  }
+}
+@keyframes scratch {
+  from {
+    transform: rotate(-6deg);
+  }
+  to {
+    transform: rotate(8deg);
+  }
+}
+@keyframes q-float {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(-8px);
+    opacity: 1;
+  }
+}
+
+.bolt-idle .eyes {
+  transform-origin: center;
+  animation: blink 3.6s infinite;
+}
+@keyframes blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+
+/* ---- small signs of life -------------------------------------------- */
+
+.count-pop {
+  display: inline-block;
+  animation: count-pop 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+@keyframes count-pop {
+  0% {
+    transform: scale(1.6);
+    color: theme("colors.accent2");
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.timer-urgent {
+  display: inline-block;
+  animation: timer-pulse 0.5s ease-in-out infinite alternate;
+}
+@keyframes timer-pulse {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.18);
+  }
+}
+
+.title-float {
+  animation: float-y 5s ease-in-out infinite;
+}
+
+/* =====================================================================
+   PODIUM — projector only
+   ===================================================================== */
+
+.stage {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  overflow: hidden;
+  isolation: isolate;
+  color: #fff;
+  background:
+    radial-gradient(90% 60% at 50% 115%, rgba(124, 58, 237, 0.35) 0%, transparent 60%),
+    radial-gradient(120% 90% at 50% 0%, #140b24 0%, #07050c 55%, #030206 100%);
+}
+
+.stage-floor {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: 0;
+  height: 16vh;
+  background: linear-gradient(to top, rgba(168, 85, 247, 0.22), transparent);
+}
+
+.spot-wrap {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+.spot-wrap--sweep {
+  animation: fade-out 0.7s ease forwards;
+}
+.spot-wrap--hero {
+  opacity: 0;
+  animation: fade-in 0.6s ease forwards;
+}
+.spot {
+  position: absolute;
+  top: -8vh;
+  left: 50%;
+  width: 140vmax;
+  height: 140vh;
+  margin-left: -70vmax;
+  transform-origin: 50% 0;
+}
+.spot-a {
+  background: conic-gradient(at 50% 0%, transparent 0deg 172deg, rgba(216, 180, 254, 0.2) 180deg, transparent 188deg 360deg);
+  animation: sweep 4.2s ease-in-out infinite alternate;
+}
+.spot-b {
+  background: conic-gradient(at 50% 0%, transparent 0deg 174deg, rgba(244, 114, 182, 0.16) 180deg, transparent 186deg 360deg);
+  animation: sweep 3.3s ease-in-out infinite alternate-reverse;
+}
+.spot-hero {
+  background: conic-gradient(at 50% 0%, transparent 0deg 167deg, rgba(253, 230, 138, 0.3) 180deg, transparent 193deg 360deg);
+}
+@keyframes sweep {
+  from {
+    transform: rotate(-32deg);
+  }
+  to {
+    transform: rotate(32deg);
+  }
+}
+@keyframes fade-in {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+.stage-head {
+  position: absolute;
+  top: 4vh;
+  left: 0;
+  right: 0;
+  text-align: center;
+  animation: title-in 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.1) both;
+}
+.stage-eyebrow {
+  margin: 0 0 0.6vh;
+  font-family: theme("fontFamily.mono");
+  font-size: clamp(0.75rem, 1.2vw, 1.2rem);
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: #c4b5fd;
+}
+.stage-title {
+  margin: 0;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-size: clamp(2rem, min(6vw, 9vh), 7rem);
+  background-image: linear-gradient(100deg, #f5f3ff 0%, #d8b4fe 35%, #f472b6 65%, #fde68a 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 6s linear infinite;
+}
+@keyframes title-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3vh) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.podium {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1.4vw;
+  padding: 0 4vw;
+}
+.podium-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(27vw, 30rem);
+}
+.podium-block {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 2vh;
+  overflow: hidden;
+  border-radius: 16px 16px 0 0;
+  background: linear-gradient(180deg, var(--m1) 0%, var(--m2) 100%);
+  box-shadow:
+    inset 0 5px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -40px 70px rgba(0, 0, 0, 0.35),
+    0 0 70px -10px var(--glow);
+  animation: block-rise 1s cubic-bezier(0.2, 0.9, 0.25, 1.05) both;
+}
+.podium-col--1 .podium-block {
+  height: 36vh;
+}
+.podium-col--2 .podium-block {
+  height: 26vh;
+}
+.podium-col--3 .podium-block {
+  height: 19vh;
+}
+/* Engineered surface: a faint blueprint grid and a scanning light line. */
+.podium-block::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.09) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+.podium-block::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -30%;
+  height: 30%;
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.28), transparent);
+  animation: scan 3.6s linear infinite;
+}
+@keyframes scan {
+  to {
+    transform: translateY(440%);
+  }
+}
+@keyframes block-rise {
+  0% {
+    transform: translateY(105%);
+  }
+  78% {
+    transform: translateY(-2.5%);
+  }
+  100% {
+    transform: none;
+  }
+}
+.podium-numeral {
+  position: relative;
+  font-weight: 900;
+  line-height: 1;
+  font-size: clamp(3rem, min(9vw, 14vh), 11rem);
+  color: rgba(0, 0, 0, 0.26);
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.45);
+}
+.podium-label {
+  position: relative;
+  margin-top: 0.4vh;
+  font-family: theme("fontFamily.mono");
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  font-size: clamp(0.65rem, 1vw, 1.05rem);
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.plate {
+  position: relative;
+  width: 100%;
+  margin-bottom: 1.6vh;
+  text-align: center;
+  animation: name-drop 0.85s cubic-bezier(0.2, 1.4, 0.35, 1) both;
+}
+.plate--empty {
+  min-height: 1px;
+  animation: none;
+}
+@keyframes name-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-9vh) scale(1.5);
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+.plate-name {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+.glow-name {
+  display: inline-block;
+  max-width: 100%;
+  font-weight: 800;
+  line-height: 1.05;
+  font-size: clamp(1.2rem, min(2.7vw, 4.6vh), 3.6rem);
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  background-image: linear-gradient(100deg, var(--m1) 0%, #ffffff 44%, var(--m1) 56%, var(--m2) 100%);
+  background-size: 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 0.28em var(--glow));
+  animation:
+    shimmer 3.2s linear infinite,
+    float-y 3.6s ease-in-out infinite;
+}
+.glow-name--gold {
+  font-size: clamp(1.5rem, min(3.5vw, 6vh), 4.8rem);
+  animation:
+    shimmer 2.4s linear infinite,
+    float-y 3s ease-in-out infinite,
+    gold-pulse 1.8s ease-in-out infinite;
+}
+@keyframes shimmer {
+  from {
+    background-position: 130% 0;
+  }
+  to {
+    background-position: -130% 0;
+  }
+}
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-0.7deg);
+  }
+  50% {
+    transform: translateY(-1.1vh) rotate(0.7deg);
+  }
+}
+@keyframes gold-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0.25em rgba(251, 191, 36, 0.7));
+  }
+  50% {
+    filter: drop-shadow(0 0 0.7em rgba(251, 191, 36, 1)) drop-shadow(0 0 1.4em rgba(236, 72, 153, 0.55));
+  }
+}
+.plate-meta {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 1vw;
+  margin-top: 0.8vh;
+}
+.plate-roll {
+  font-family: theme("fontFamily.mono");
+  font-size: clamp(0.7rem, 1vw, 1.1rem);
+  color: rgba(255, 255, 255, 0.55);
+}
+.plate-score {
+  font-family: theme("fontFamily.mono");
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(1rem, min(1.9vw, 3.2vh), 2.4rem);
+  color: var(--m1);
+  text-shadow: 0 0 0.5em var(--glow);
+}
+
+.crown-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.4vh;
+  animation: crown-drop 0.8s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+.crown {
+  width: clamp(3rem, 6vw, 7rem);
+  height: auto;
+  filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.9));
+  animation: crown-bob 2.4s ease-in-out infinite;
+}
+@keyframes crown-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-30vh) rotate(-25deg);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(1vh) rotate(6deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes crown-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-4deg);
+  }
+  50% {
+    transform: translateY(-0.8vh) rotate(4deg);
+  }
+}
+
+/* Sparks orbiting the champion on a tilted, elliptical path. */
+.orbit-tilt {
+  --orbit-r: clamp(6rem, 15vw, 16rem);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform: scaleY(0.3);
+  pointer-events: none;
+}
+.orbit {
+  position: absolute;
+  inset: 0;
+  animation: orbit 6s linear infinite;
+}
+.orbit i {
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fef3c7;
+  box-shadow: 0 0 10px 2px #fbbf24;
+}
+@keyframes orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.stage-dim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(3, 2, 6, 0.72);
+  opacity: 0;
+  animation: dim 1.4s ease both;
+}
+@keyframes dim {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.drum-text {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 40%;
+  margin: 0;
+  text-align: center;
+  font-weight: 900;
+  font-size: clamp(1.6rem, min(4.5vw, 7vh), 5.5rem);
+  color: #fde68a;
+  text-shadow: 0 0 0.5em rgba(251, 191, 36, 0.7);
+  opacity: 0;
+  animation: drum 1.4s ease both;
+}
+@keyframes drum {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.04);
+  }
+  60% {
+    transform: scale(0.99);
+  }
+  75% {
+    transform: scale(1.05);
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.3);
+  }
+}
+.podium-charge {
+  position: absolute;
+  left: 50%;
+  bottom: -3vh;
+  width: 28vw;
+  height: 9vh;
+  margin-left: -14vw;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(253, 230, 138, 0.9), rgba(251, 191, 36, 0.35) 55%, transparent);
+  opacity: 0;
+  animation: charge 1.4s ease-in both;
+}
+@keyframes charge {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  85% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+.stage-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 55%, rgba(255, 251, 235, 0.95), rgba(251, 191, 36, 0.35) 35%, transparent 70%);
+  opacity: 0;
+  animation: flash 1s ease-out both;
+}
+@keyframes flash {
+  0% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.stage-empty {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 48%;
+  text-align: center;
+  font-size: 2rem;
+  color: #a79ec2;
+}
+
+/* ---- reduced motion: end states, no movement ------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .fly-word,
+  .fly-block,
+  .option-in,
+  .lb-row-in,
+  .reveal-correct,
+  .reveal-correct::after,
+  .reveal-stamp,
+  .reveal-sink,
+  .reveal-wrong,
+  .brick-wall,
+  .brick,
+  .crack path,
+  .crumble-ghost,
+  .result-pop,
+  .count-pop,
+  .timer-urgent,
+  .title-float,
+  .bolt *,
+  .stage,
+  .stage * {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

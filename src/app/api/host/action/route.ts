@@ -19,6 +19,7 @@ const ACTIONS: HostAction[] = [
   "REVEAL",
   "SOLUTION",
   "LEADERBOARD",
+  "PODIUM",
   "NEXT",
   "PREV",
   "SKIP",
@@ -110,6 +111,20 @@ export async function POST(req: Request) {
     if (err instanceof NotFoundError) {
       return NextResponse.json({ error: err.message }, { status: 404 });
     }
+    // The code knows a phase the database does not: the app was deployed
+    // ahead of its migration. Say exactly what to run, rather than a bare
+    // 500 that leaves the host guessing mid-session.
+    const pg = err as { code?: string; message?: string } | null;
+    if (pg?.code === "23514" && /sessions_phase_check/.test(pg.message ?? "")) {
+      return NextResponse.json(
+        {
+          error:
+            "The database doesn't support this screen yet. Run supabase/migrations/0009_podium_phase.sql in the Supabase SQL editor, then try again. The quiz itself is unaffected.",
+        },
+        { status: 503 }
+      );
+    }
+
     console.error("[/api/host/action]", err);
     return NextResponse.json(
       { error: "Could not change the phase." },

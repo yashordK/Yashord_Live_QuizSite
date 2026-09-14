@@ -260,3 +260,39 @@ describe("remainingSeconds", () => {
     expect(remainingSeconds("not-a-date", 20, t0)).toBeNull();
   });
 });
+
+describe("podium (top three)", () => {
+  it("can be shown from any live phase and keeps the current question", () => {
+    for (const p of ["QUESTION_ONLY", "ACCEPTING_ANSWERS", "LOCKED", "REVEALED", "SOLUTION", "LEADERBOARD"] as const) {
+      const r = applyAction(at(p, 4), "PODIUM", makeCtx());
+      expect(r.phase).toBe("PODIUM");
+      expect(r.currentIndex).toBe(4);
+      expect(r.durationSec).toBeNull();
+    }
+  });
+
+  it("is not available before the quiz starts", () => {
+    expect(() => applyAction(IDLE, "PODIUM", makeCtx())).toThrow(PhaseError);
+  });
+
+  it("can be pressed again to replay the reveal", () => {
+    expect(applyAction(at("PODIUM", 6), "PODIUM", makeCtx()).phase).toBe("PODIUM");
+  });
+
+  it("keeps an ended session ended", () => {
+    const ended: MachineState = { phase: "LEADERBOARD", status: "ended", currentIndex: 6, leaderboardShownAfter: 5 };
+    expect(applyAction(ended, "PODIUM", makeCtx()).status).toBe("ended");
+  });
+
+  it("NEXT from the podium advances rather than re-showing the interval leaderboard", () => {
+    const s: MachineState = { phase: "PODIUM", status: "live", currentIndex: 5, leaderboardShownAfter: 0 };
+    const r = applyAction(s, "NEXT", makeCtx(12, 5));
+    expect(r.phase).toBe("QUESTION_ONLY");
+    expect(r.currentIndex).toBe(6);
+  });
+
+  it("never accepts answers and never exposes the key", () => {
+    expect(phaseAcceptsAnswers("PODIUM")).toBe(false);
+    expect(phaseShowsAnswerKey("PODIUM")).toBe(false);
+  });
+});
