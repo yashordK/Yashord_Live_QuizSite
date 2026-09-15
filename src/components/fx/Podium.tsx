@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { LeaderboardEntry } from "@/lib/types";
 import { burst, cannons, rain, stopRain, GOLD } from "./confetti";
 import { prefersReducedMotion, useCountUp } from "./core";
+import { playSound } from "./sound";
 
 /**
  * The projector's top-three reveal.
@@ -135,6 +136,30 @@ export function Podium({
     return () => {
       timers.forEach((id) => clearTimeout(id));
       stopRain();
+    };
+    // Timed once from the frozen phase clock.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Crowd cheer the moment the podium is shown; at ~20s it covers the whole
+  // reveal. Deliberately separate from the confetti schedule above, and not
+  // gated on reduced motion (that setting is about movement, not sound).
+  // A projector that joins the reveal late — a refresh — stays quiet rather
+  // than erupting mid-sequence, and moving on fades the cheer out.
+  useEffect(() => {
+    if (t > 3) return;
+    let stop: (() => void) | null = null;
+    let cancelled = false;
+    const id = window.setTimeout(() => {
+      void playSound("cheer").then((s) => {
+        if (cancelled) s?.();
+        else stop = s;
+      });
+    }, Math.max(0, -t * 1000));
+    return () => {
+      cancelled = true;
+      clearTimeout(id);
+      stop?.();
     };
     // Timed once from the frozen phase clock.
     // eslint-disable-next-line react-hooks/exhaustive-deps

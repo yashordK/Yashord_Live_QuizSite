@@ -4,6 +4,7 @@ import { useEffect, type CSSProperties } from "react";
 import { Bolt } from "./Bolt";
 import { burst } from "./confetti";
 import { seeded, useCountUp, vibrate, type OnceMode } from "./core";
+import { playSound } from "./sound";
 
 /**
  * The per-student verdict after a reveal.
@@ -68,6 +69,7 @@ export function ResultCard({
 
     if (kind === "correct") {
       vibrate([40, 50, 40, 50, 130]);
+      void playSound("correct");
       const first = window.setTimeout(() => {
         const rect = correctElement()?.getBoundingClientRect();
         const x = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
@@ -83,7 +85,10 @@ export function ResultCard({
       };
     }
 
-    if (kind === "wrong") vibrate(180);
+    if (kind === "wrong") {
+      vibrate(180);
+      void playSound("wrong");
+    }
     // correctElement is a stable getter; the effect must only fire on the
     // animate transition, not whenever the parent re-renders.
     // eslint-disable-next-line react-hooks/exhaustive-deps

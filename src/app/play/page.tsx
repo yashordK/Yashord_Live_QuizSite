@@ -11,6 +11,7 @@ import { CrumbleText } from "@/components/fx/CrumbleText";
 import { ResultCard } from "@/components/fx/ResultCard";
 import { PODIUM_TIMELINE } from "@/components/fx/Podium";
 import { useOnce } from "@/components/fx/core";
+import { useAudioUnlock } from "@/components/fx/sound";
 import type { LeaderboardEntry } from "@/lib/types";
 
 export default function PlayPage() {
@@ -134,6 +135,10 @@ export default function PlayPage() {
   // so they can't disagree about whether this reveal has already played.
   const revealMode = useOnce(revealPhase && question ? `reveal:${question.id}` : null);
   const correctRef = useRef<HTMLDivElement | null>(null);
+  // Bell / drums on this student's own reveal. Browsers only allow sound
+  // after a tap, and answering is that tap, so anyone who can receive a
+  // result has already unlocked it.
+  useAudioUnlock(["correct", "wrong"]);
 
   // The podium is the projector's moment. Phones hold every name — including
   // the student's own rank — until the projector's reveal has finished, so

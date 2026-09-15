@@ -7,6 +7,7 @@ import { FlyInText } from "@/components/fx/FlyInText";
 import { Podium } from "@/components/fx/Podium";
 import { burst } from "@/components/fx/confetti";
 import { useOnce } from "@/components/fx/core";
+import { useAudioUnlock } from "@/components/fx/sound";
 import type { LeaderboardEntry } from "@/lib/types";
 
 /**
@@ -61,6 +62,7 @@ export default function PresentPage() {
     (phase === "REVEALED" || phase === "SOLUTION") && qid ? `present-reveal:${qid}` : null
   );
   const correctCardRef = useRef<HTMLDivElement | null>(null);
+  const soundOn = useAudioUnlock(["cheer"]);
 
   // The room's moment: confetti bursts out of the right answer's card.
   useEffect(() => {
@@ -85,6 +87,17 @@ export default function PresentPage() {
 
   return (
     <div className="present-root flex flex-col px-[3vw] py-[2vh]">
+      {/* Nobody taps the projector, and browsers stay silent until someone
+          does. One click here (or any key) enables the podium cheer; the
+          button disappears once sound is live. */}
+      {!soundOn && (
+        <button
+          type="button"
+          className="fixed bottom-4 left-4 z-50 rounded-full border border-edge bg-panel/90 px-4 py-2 text-sm font-semibold text-slate-300 hover:border-accent"
+        >
+          🔊 Click to enable sound
+        </button>
+      )}
       {/* ---- top strip: join info + progress + timer ---- */}
       <header
         className="flex shrink-0 flex-wrap items-center justify-between gap-x-[2vw] gap-y-2 border-b border-edge pb-[1.5vh]"
